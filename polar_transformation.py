@@ -38,8 +38,11 @@ MI = simplify(Ry.inv()*Rz.inv()*M*Rz*Ry)
 # S = A(T) = [2tx 2ty |t|2-1] / (1+|t|2)
 # P = [tx ty 1-t], t = (s^2-sz)/(x*sx+y*sy-sz)
 
+# sphere 0,0,0, R=1
+# from the north pole 0,0,1
+# onto plane z=0
 def stereo2plane(x, y, z):
-    "stereographic projection from a unit sphere onto plane"
+    "stereographic projection from a unit sphere onto a plane, also the point CAN be not on the sphere"
     return (x/(1-z), y/(1-z))
 
 def circle2pole(x, y, r):
