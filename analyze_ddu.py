@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from itertools import chain, groupby
 from functools import reduce
+from copy import copy
 from statistics import mean
 from collections.abc import Sequence, Iterable
 import numpy as np
@@ -80,6 +81,22 @@ class Ddu:
             i += 1
         return (ranks, left)
 
+    def step(self):
+        cs = []
+        for c in self.circles:
+            x = c['x']
+            y = c['y']
+            r = c['r']
+            for j in c['rule']:
+                cj = self.circles[int(j)]
+                x, y, r = invert(cj['x'], cj['y'], cj['r'], x, y, r)
+            c = copy(c)
+            c['x'] = x
+            c['y'] = y
+            c['r'] = r
+            cs.append(c)
+        self.circles = cs
+
     def iterate(self, n_steps: int) -> tuple[Rule]:
         rules = self.rules
         unique_rules = self.unique_rules
@@ -130,7 +147,7 @@ class Ddu:
         #        rule_blueprints
         #        )
 
-    def run(self, n_steps):
+    def _run(self, n_steps):
         cs0 = tuple((c['x'], c['y'], c['r'], tuple(int(x) for x in c['rule'])) for c in self.circles)
         cs = cs0
         for _ in range(n_steps):
@@ -324,6 +341,5 @@ triada = Ddu.read_from(triada_path)
 if __name__ == '__main__':
     import os
     for filename in os.listdir(dir_path):
-        print(f"\n\n[( {filename} )]", end=" ")
-        ddu = parse_ddu(dir_path + filename)
-        print_ranks(rules_of(ddu))
+        ddu = Ddu.read_from(dir_path + filename)
+        print(f"\n\n[( {filename} )] {ddu}")
