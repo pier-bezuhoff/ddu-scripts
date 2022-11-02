@@ -52,4 +52,6 @@ def play_ddu(ddu_filename="Winter.ddu"):
         play_accord([f], [a], frame_duration).wait_done()
         ddu.step()
 
+    # smth is wrong, r->0 on frame 2
+
 
