@@ -12,6 +12,10 @@ class Circle:
         self.visible = visible
         self.rule = [int(x) for x in rule]
 
+    def __repr__(self):
+        rule = ''.join(str(i) for i in self.rule)
+        return f"Circle(x={self.x}, y={self.y}, r={self.r}, rule={rule}, color={self.color}, fill={self.fill}, visible={self.visible})"
+
     # invert *self* with respect to the *circle*
     def invert(self, circle):
         dx, dy = self.x - circle.x, self.y - circle.y
@@ -28,6 +32,8 @@ def invert(x0, y0, r0, x, y, r) -> tuple[float, float, float]:
     "invert a circle w/ (x,y) and r with respect to a circle w/ (x0,y0) and r0"
     dx, dy = x - x0, y - y0
     d = hypot(dx, dy)
+    if d == r: # supposed to transform into a straight line
+        d += 1e-6
     ratio = r0 / (d*d - r*r)
     new_x = x0 + ratio * dx
     new_y = y0 + ratio * dy

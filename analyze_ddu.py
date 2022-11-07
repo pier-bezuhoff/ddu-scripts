@@ -2,19 +2,52 @@
 from itertools import chain, groupby
 from functools import reduce
 from copy import copy
-from statistics import mean
+from math import hypot
+from dataclasses import dataclass
 from collections.abc import Sequence, Iterable
+from statistics import mean
+import os
 import numpy as np
 from llist import dllist # setup: pip install llist
+# mine
 from run_ddu import invert
 from polar_transformation import circle2pole, pole2circle, pole2matrix
 
 Rule = tuple[int]
 
-class Ddu:
-    "[circle], where circle = dict(x,y,r:float, visible:bool, rule:str)"
+@dataclass
+class Circle:
+    x: float
+    y: float
+    r: float
+    color: int # f"#{color:06X}" -> css color format
+    visible: bool = False
+    rule: str = ""
+    fill: bool = False
 
-    def __init__(self, circles: Sequence[dict]):
+    def invert(self, circle: 'Circle') -> 'Circle':
+        "*self* $ *circle*"
+        dx, dy = circle.x - self.x, circle.y - self.y
+        d = hypot(dx, dy)
+        r = circle.r
+        if d == r: # supposed to transform into a straight line
+            d += 1e-6
+        ratio = self.r * self.r / (d*d - r*r)
+        new_x = self.x + ratio * dx
+        new_y = self.y + ratio * dy
+        new_r = abs(r * ratio)
+        new_circle = copy(circle)
+        new_circle.x = new_x
+        new_circle.y = new_y
+        new_circle.r = new_r
+        return new_circle
+
+    def show_coords(self) -> str:
+        return f"Circle(x={self.x:.2f}, y={self.y:.2f}, r={self.r:.2f}"
+
+class Ddu:
+
+    def __init__(self, circles: Sequence[Circle]):
         self.circles = list(circles)
 
     def __repr__(self):
@@ -84,16 +117,9 @@ class Ddu:
     def step(self):
         cs = []
         for c in self.circles:
-            x = c['x']
-            y = c['y']
-            r = c['r']
-            for j in c['rule']:
+            for j in c.rule:
                 cj = self.circles[int(j)]
-                x, y, r = invert(cj['x'], cj['y'], cj['r'], x, y, r)
-            c = copy(c)
-            c['x'] = x
-            c['y'] = y
-            c['r'] = r
+                c = cj.invert(c)
             cs.append(c)
         self.circles = cs
 
@@ -148,7 +174,7 @@ class Ddu:
         #        )
 
     def _run(self, n_steps):
-        cs0 = tuple((c['x'], c['y'], c['r'], tuple(int(x) for x in c['rule'])) for c in self.circles)
+        cs0 = tuple((c.x, c.y, c.r, tuple(int(x) for x in c.rule)) for c in self.circles)
         cs = cs0
         for _ in range(n_steps):
             new_cs = []
@@ -187,7 +213,7 @@ class Ddu:
 
     @property
     def str_rules(self) -> list[str]:
-        return [c['rule'] for c in self.circles]
+        return [c.rule for c in self.circles]
 
     @property
     def str_unique_rules(self) -> tuple[str]:
@@ -195,7 +221,7 @@ class Ddu:
 
     @property
     def rules(self) -> tuple[Rule]:
-        return tuple(tuple(int(x) for x in c['rule']) for c in self.circles)
+        return tuple(tuple(int(x) for x in c.rule) for c in self.circles)
 
     @property
     def unique_rules(self) -> tuple[Rule]:
@@ -230,7 +256,7 @@ class Ddu:
                     circle['visible'] = False
                     circle['rule'] = ""
                 if 'visible' in circle:
-                    circles.append(circle)
+                    circles.append(Circle(**circle))
 
         with open(path, 'r') as f:
             param_line = -1
@@ -263,6 +289,7 @@ class Ddu:
                     param_line += 1
             add_circle()
         return Ddu(circles)
+
 
 def cancel_rule(rule: Rule) -> Rule:
     "remove all consecutive equal elements"
@@ -334,12 +361,16 @@ def rule2str(rule: Rule) -> str:
 def apply_rule(rule: Rule, target_rule: Rule) -> Rule:
     return rule + target_rule + rule[::-1]
 
+
 dir_path = "/home/pierbezuhoff/Programming/Android/Dodeca/app/src/main/assets/ddu/"
 triada_path = dir_path + "Triada.ddu"
 triada = Ddu.read_from(triada_path)
+winter = Ddu.read_from(dir_path + "Winter.ddu")
+
+def ddu_named(name: str) -> Ddu:
+    return Ddu.read_from(dir_path + name + ".ddu")
 
 if __name__ == '__main__':
-    import os
     for filename in os.listdir(dir_path):
         ddu = Ddu.read_from(dir_path + filename)
         print(f"\n\n[( {filename} )] {ddu}")
