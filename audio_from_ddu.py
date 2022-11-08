@@ -1,7 +1,9 @@
+#!/usr/bin/env python
 from math import hypot
 from time import sleep
 # libraries
 import numpy as np
+from scipy.io import wavfile
 from simpleaudio import play_buffer
 # mine
 import analyze_ddu as ad
@@ -13,26 +15,37 @@ def timespace(duration):
     n_frames = round(duration * sample_rate)
     return np.linspace(0, duration, n_frames, endpoint=False)
 
-def sin_wave(frequency, amplitude, duration):
+def sine_wave(frequency, amplitude, duration):
+    #half_period = 1/(2 * frequency)
+    #n_tacts = round(duration/half_period)
+    #t = timespace(n_tacts * half_period)
     t = timespace(duration)
     return amplitude * np.sin(frequency * t * 2 * np.pi)
 
-def play_wave(audio):
-    audio *= (2**15 - 1) / np.max(np.abs(audio)) # normalize to 16-bit range
-    audio = audio.astype(np.int16)
-    return play_buffer(audio, 1, 2, sample_rate) # 1-channel
-
-def play_accord(freqs, amps, duration=0.5):
-    wave = sum(sin_wave(freq, amp, duration) for freq, amp in zip(freqs, amps))
-    return play_wave(wave)
+def sum_wave(waves):
+    return sum(waves) # uhh
 
 # accord = [(freq, amplitude)]
-def play_accords(accords, note_duration=0.5):
+def accords2wave(accords, note_duration=0.5):
     wave = np.hstack([
-        sum(sin_wave(f, a, note_duration) for f, a in accord)
+        sum_wave(sine_wave(f, a, note_duration) for f, a in accord)
         for accord in accords
         ])
-    return play_wave(wave)
+    return wave
+
+def convert_wave(wave):
+    wave *= (2**15 - 1) / np.max(np.abs(wave)) # normalize to 16-bit range
+    audio = wave.astype(np.int16)
+    return audio
+
+def play_audio(audio):
+    return play_buffer(audio, 1, 2, sample_rate) # 1-channel
+
+def play_wave(wave):
+    return play_audio(convert_wave(wave))
+
+def save_audio(audio, filename="ddu-audio.wav"):
+    wavfile.write(filename, sample_rate, audio)
 
 def r2amplitude(radius):
     # 500 = large
@@ -65,10 +78,15 @@ def play_ddu(name="Winter", targets=[-3,-2,-1], note_duration=0.2, n_notes=200):
             ]
         )
         ddu.step()
-    return play_accords(accords, note_duration)
+    audio = convert_wave(accords2wave(accords, note_duration))
+    save_audio(audio)
+    return play_audio(audio)
 
 def play():
     #return play_ddu("Unknown lady", [6, 9]) <- bad
     #return play_ddu("Klein bottle", [4, -1])
     #return play_ddu("Sakura", [6, 22])
-    return play_ddu(note_duration=0.05, n_notes=500)
+    return play_ddu(targets=[-3,-2,-1], note_duration=0.03, n_notes=2000)
+
+if __name__ == '__main__':
+    play()
