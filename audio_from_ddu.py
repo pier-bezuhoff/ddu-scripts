@@ -23,12 +23,15 @@ def play_wave(audio):
     return play_buffer(audio, 1, 2, sample_rate) # 1-channel
 
 def play_accord(freqs, amps, duration=0.5):
-    wave = sum(sin_wave(freq, amp) for freq, amp in zip(freqs, amps))
+    wave = sum(sin_wave(freq, amp, duration) for freq, amp in zip(freqs, amps))
     return play_wave(wave)
 
-# fas = (freq, amplitude) iterator
-def play_seq(fas, note_duration=0.5):
-    wave = np.hstack([sin_wave(f, a, note_duration) for (f,a) in fas])
+# accord = [(freq, amplitude)]
+def play_accords(accords, note_duration=0.5):
+    wave = np.hstack([
+        sum(sin_wave(f, a, note_duration) for f, a in accord)
+        for accord in accords
+        ])
     return play_wave(wave)
 
 def r2amplitude(radius):
@@ -44,24 +47,28 @@ def center2freq(x, y):
     # normal hearing range is 20Hz-20kHz
     # good center for winter: (400, 640)
     d = hypot(x - 400, y - 640)
-    v = min(1 + d/20, 1000) # [1; 1000]
+    v = min(1 + d/10, 1000) # [1; 1000]
     f = 20*v
     #print(f"d={d:.4f} -> {f:.4f}Hz")
     return f
 
-def play_ddu(name="Winter"):
-    frame_duration = 0.2
+def play_ddu(name="Winter", targets=[-3,-2,-1], note_duration=0.2, n_notes=200):
     ddu = ad.ddu_named(name)
-    target_index = -3 # any of the last 3 for winter
-    fas = []
-    for _ in range(100):
-        c = ddu.circles[target_index]
-        a = r2amplitude(c.r) # radius -> amplitude
-        f = center2freq(c.x, c.y) # distance -> frequency
-        #play_accord([f], [a], frame_duration).wait_done()
-        fas.append((f, a))
+    accords = []
+    for _ in range(n_notes):
+        accords.append(
+            [
+                (
+                    center2freq(ddu.circles[tIx].x, ddu.circles[tIx].y),
+                    r2amplitude(ddu.circles[tIx].r)
+                ) for tIx in targets
+            ]
+        )
         ddu.step()
-    return play_seq(fas, frame_duration)
+    return play_accords(accords, note_duration)
 
-
-
+def play():
+    #return play_ddu("Unknown lady", [6, 9]) <- bad
+    #return play_ddu("Klein bottle", [4, -1])
+    #return play_ddu("Sakura", [6, 22])
+    return play_ddu(note_duration=0.05, n_notes=500)
