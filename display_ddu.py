@@ -1,15 +1,18 @@
 #!/usr/bin/env python
 import tkinter as tk
 import analyze_ddu as ad
+from time import sleep
 
 x_shift = 400
-y_shift = -300
+y_shift = -200
 line_width = 2
+dt = 300/1000 *0 # sec
 
 class App(tk.Tk):
-    def __init__(self, ddu):
+    def __init__(self, ddu, update_callback=lambda _ddu: None):
         super().__init__()
         self.ddu = ddu
+        self.update_callback = update_callback
         self.running = True
         self.canvas = tk.Canvas(self, width=1600, height=1000, bg="gray")
         self.canvas.bind("<1>", self.mouse_press)
@@ -40,6 +43,7 @@ class App(tk.Tk):
         if self.running:
             self.draw()
             self.ddu.step()
+            self.update_callback(self.ddu)
         #super().update()
 
     def loop(self):
@@ -47,9 +51,11 @@ class App(tk.Tk):
             if self.running:
                 self.draw()
                 self.ddu.step()
+                sleep(dt)
             self.update_idletasks()
             self.update()
 
 if __name__ == "__main__":
-    ddu = ad.ddu_named("Triada")
-    App(ddu).mainloop()
+    ddu = ad.ddu_named("Winter")
+    App(ddu).mainloop() # press = 1upd
+    #App(ddu).loop() # continuous updates
