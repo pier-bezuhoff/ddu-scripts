@@ -1,17 +1,17 @@
-from sympy import *
-from sympy.matrices import *
-
 from math import hypot
+from sympy import symbols, atan2, sqrt, sin, cos, Matrix, simplify
+from sympy.matrices import matrix2numpy
 
-a = symbols("a", real=True)
+a, k = symbols("a k", real=True)
 phi, th = symbols("phi theta", real=True)
 
 # M * [x y z w].T = [x' y' z' w'].T
+# k = scaling/sphere radius
 M = Matrix([
-    [a*a + 1, 0,       0,       -2*a    ],
+    [a*a + 1, 0,       0,       -2*a*k  ],
     [0,       1 - a*a, 0,       0       ],
     [0,       0,       1 - a*a, 0       ],
-    [2*a,     0,       0,       -a*a - 1]
+    [2*a/k,   0,       0,       -a*a - 1]
 ])
 
 # th = -atan2(z, x)
@@ -45,39 +45,37 @@ def stereo2plane(x, y, z):
     "stereographic projection from a unit sphere onto a plane, also the point CAN be not on the sphere"
     return (x/(1-z), y/(1-z))
 
-def circle2pole(x, y, r):
+# R here and onwards is the sphere radius
+def circle2pole(x, y, r, R=1):
+    x /= R
+    y /= R
+    r /= R
     # T = any point on the circle
     tx = x + r
     ty = y
-    t2 = tx*tx+ty*ty
-    denom = 1 + t2
-    (sx, sy, sz) = (2*tx/denom, 2*ty/denom, (t2 - 1)/denom) # = stereographic(T)
-    s2 = sx*sx+sy*sy+sz*sz
-    t = (s2 - sz)/(x * sx + y * sy - sz)
-    P = (t*x, t*y, 1-t)
+    d = 1 + tx*tx + ty*ty
+    (sx, sy, sz) = (2*tx/d, 2*ty/d, (d - 2)/d) # = stereographic(T)
+    k = (1 - sz)/(x * sx + y * sy - sz)
+    P = (k*x *R, k*y *R, (1-k) *R)
     return P
 
-def pole2circle(x, y, z, w=1):
+def pole2circle(x, y, z, w=1, R=1):
+    w *= R
     x, y, z = x/w, y/w, z/w
+    nz = 1 - z
     # st proj: pole->center
-    cx, cy = x/(1-z), y/(1-z) # correct formulae even if the pole is not on the sphere
-    # T = a point on the polar circle
-    d = hypot(x, y)
-    p2 = x*x + y*y + z*z
-    tz = z/p2 + d * sqrt(p2 - 1)/p2
-    if d == 0:
-        tx = sqrt(1 - tz*tz)
-        ty = 0
-    else:
-        tx = - x * (z*tz - 1)/(d*d)
-        ty = y * tx/x
-    sx, sy = tx/(1-tz), ty/(1-tz) # S = st proj T
-    r = hypot(cx-sx, cy-sy)
-    return (cx, cy, r)
+    cx, cy = x/nz, y/nz # correct formulae even if the pole is not on the sphere
+    op2 = x*x + y*y + z*z
+    r: float = sqrt(op2 - 1)/abs(nz)
+    return (cx *R, cy *R, r *R)
 
-def pole2matrix(x, y, z):
+def pole2matrix(x, y, z, R=1):
     a0 = sqrt(x*x + y*y + z*z)
     th0 = -atan2(z, x)
     phi0 = -atan2(y, hypot(x, z))
-    matrix = MI.xreplace({a:a0, th:th0, phi:phi0})
+    matrix = MI.xreplace({a:a0, k:R, th:th0, phi:phi0})
     return matrix2numpy(matrix)
+
+def pole2xyz(pole):
+    (x,), (y,), (z,), (w,) = pole
+    return (x/w, y/w, z/w)

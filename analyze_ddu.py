@@ -3,6 +3,7 @@ from itertools import chain, groupby
 from functools import reduce
 from copy import copy
 from math import hypot
+from random import uniform
 from dataclasses import dataclass
 from collections.abc import Sequence, Iterable
 from statistics import mean
@@ -20,7 +21,7 @@ class Circle:
     x: float
     y: float
     r: float
-    color: int # f"#{color:06X}" -> css color format
+    color: int = 0 # f"#{color:06X}" -> css color format
     visible: bool = False
     rule: str = ""
     fill: bool = False
@@ -43,7 +44,22 @@ class Circle:
         return new_circle
 
     def show_coords(self) -> str:
-        return f"Circle(x={self.x:.2f}, y={self.y:.2f}, r={self.r:.2f}"
+        return f"Circle(x={self.x:.2f}, y={self.y:.2f}, r={self.r:.2f})"
+
+    def __repr__(self):
+        return self.show_coords()
+
+    def to_pole(self, R=1):
+        x,y,z = circle2pole(self.x, self.y, self.r, R)
+        return np.array([[x,y,z,1.0]]).T
+
+    def to_matrix(self, R=1):
+        x,y,z = circle2pole(self.x, self.y, self.r, R)
+        return pole2matrix(x,y,z, R=R)
+
+    @staticmethod
+    def random():
+        return Circle(uniform(-1000, 1000), uniform(-1000, 1000), uniform(1e-6, 1000))
 
 class Ddu:
 
