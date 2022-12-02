@@ -1,6 +1,7 @@
 from math import hypot
 from sympy import symbols, atan2, sqrt, sin, cos, Matrix, simplify
 from sympy.matrices import matrix2numpy
+import numpy as np
 
 a, k = symbols("a k", real=True)
 phi, th = symbols("phi theta", real=True)
@@ -70,11 +71,14 @@ def pole2circle(x, y, z, w=1, R=1):
     return (cx *R, cy *R, r *R)
 
 def pole2matrix(x, y, z, R=1):
+    x /= R
+    y /= R
+    z /= R
     a0 = sqrt(x*x + y*y + z*z)
     th0 = -atan2(z, x)
     phi0 = -atan2(y, hypot(x, z))
     matrix = MI.xreplace({a:a0, k:R, th:th0, phi:phi0})
-    return matrix2numpy(matrix)
+    return matrix2numpy(matrix, dtype=np.float64)
 
 def pole2xyz(pole):
     (x,), (y,), (z,), (w,) = pole

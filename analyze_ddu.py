@@ -43,8 +43,26 @@ class Circle:
         new_circle.r = new_r
         return new_circle
 
-    def show_coords(self) -> str:
+    def show_coords(self):
         return f"Circle(x={self.x:.2f}, y={self.y:.2f}, r={self.r:.2f})"
+
+    def show_pole(self, R=1):
+        x,y,z = circle2pole(self.x, self.y, self.r, R)
+        return f"({x:.4f}, {y:.4f}, {z:.4f})"
+
+    def show_matrix(self, R=1) -> str:
+        m = self.to_matrix(R=R)
+        s = ""
+        for i in range(4):
+            s += '\n' + "  ".join(f"{m[i,j]/m[-1,-1]:.4f}" for j in range(4))
+            # M ~ k*M, so let's make m[-1,-1] = 1 (rightmost bottom element)
+        return s
+
+    def print_pole(self, R=1):
+        print(self.show_pole(R=R))
+
+    def print_matrix(self, R=1):
+        print(self.show_matrix(R=R))
 
     def __repr__(self):
         return self.show_coords()
