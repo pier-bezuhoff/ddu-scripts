@@ -2,6 +2,7 @@ from math import hypot
 from sympy import symbols, atan2, sqrt, sin, cos, Matrix, simplify
 from sympy.matrices import matrix2numpy
 import numpy as np
+from numpy import linalg as nl
 
 a, k = symbols("a k", real=True)
 phi, th = symbols("phi theta", real=True)
@@ -78,7 +79,10 @@ def pole2matrix(x, y, z, R=1):
     th0 = -atan2(z, x)
     phi0 = -atan2(y, hypot(x, z))
     matrix = MI.xreplace({a:a0, k:R, th:th0, phi:phi0})
-    return matrix2numpy(matrix, dtype=np.float64)
+    m = matrix2numpy(matrix, dtype=np.float64)
+    descale: float = abs(nl.det(m)) ** (-1/4)
+    # M ~ k*M, so let's make matrices w/ det=+-1
+    return descale * m
 
 def pole2xyz(pole):
     (x,), (y,), (z,), (w,) = pole

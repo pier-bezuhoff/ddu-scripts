@@ -9,6 +9,7 @@ from collections.abc import Sequence, Iterable
 from statistics import mean
 import os
 import numpy as np
+from numpy.linalg import det
 from llist import dllist # setup: pip install llist
 # mine
 from run_ddu import invert
@@ -26,6 +27,9 @@ class Circle:
     rule: str = ""
     fill: bool = False
 
+    # simple test of inv. matrix correctness: compare
+    # pt.pole2circle(*pt.pole2xyz(c.to_matrix(1000) @ c1.to_pole(1000)), R=1000)
+    # with c.invert(c1)
     def invert(self, circle: 'Circle') -> 'Circle':
         "*self* $ *circle*"
         dx, dy = circle.x - self.x, circle.y - self.y
@@ -54,8 +58,7 @@ class Circle:
         m = self.to_matrix(R=R)
         s = ""
         for i in range(4):
-            s += '\n' + "  ".join(f"{m[i,j]/m[-1,-1]:.4f}" for j in range(4))
-            # M ~ k*M, so let's make m[-1,-1] = 1 (rightmost bottom element)
+            s += '\n' + "  ".join(f"{m[i,j]:.4f}" for j in range(4))
         return s
 
     def print_pole(self, R=1):
@@ -78,6 +81,7 @@ class Circle:
     @staticmethod
     def random():
         return Circle(uniform(-1000, 1000), uniform(-1000, 1000), uniform(1e-6, 1000))
+
 
 class Ddu:
 
